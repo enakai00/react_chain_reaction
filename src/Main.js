@@ -7,7 +7,7 @@ import { GameBackend, getScreen, sleep, randInt, clearScreen, print }
 const game = async (screen, refresh, keyPress, exit) => {
   // Global game variables.
   let pos = 19, score = 0, hiscore = 0;
-  const arrows = ["⬆", "⬇", "⬅", "➡"];
+  const arrows = ["⬆", "⬇", "⬅", "➡", "⬍", "⬌"];
   var field, nextField;
 
   const getField = () => { const field = new Array(24);
@@ -90,74 +90,106 @@ const game = async (screen, refresh, keyPress, exit) => {
   }
 
   const moveArrows = () => {
+    const handleUp = (x, y) => {
+      if (field[y-1][x] === "@") {
+        nextField[y-1][x-1] = arrows[2];
+        nextField[y-1][x] = "*";
+        nextField[y-1][x+1] = arrows[3];
+        score += 1;
+        return;
+      } 
+      if (field[y-1][x] === "wall") {
+        nextField[y][x] = arrows[1];
+        return;
+      }
+      if (nextField[y-1][x] === arrows[1]) {
+        nextField[y-1][x] = arrows[4];
+        return;
+      }
+      nextField[y-1][x] = arrows[0];
+    }
+
+    const handleDown = (x, y) => {
+      if (field[y+1][x] === "@") {
+        nextField[y+1][x-1] = arrows[2];
+        nextField[y+1][x] = "*";
+        nextField[y+1][x+1] = arrows[3];
+        score += 1;
+        return;
+      }
+      if (field[y+1][x] === "floor") {
+        return;
+      }
+      if (nextField[y+1][x] === arrows[0]) {
+        nextField[y+1][x] = arrows[4];
+        return;
+      }              
+      nextField[y+1][x] = arrows[1];
+    }
+
+    const handleLeft = (x, y) => {
+      if (field[y][x-1] === "@") {
+        nextField[y-1][x-1] = arrows[0];
+        nextField[y][x-1] = "*";
+        nextField[y+1][x-1] = arrows[1];
+        score += 1;
+        return;
+      }
+      if (field[y][x-1] === "wall") {
+        nextField[y][x] = arrows[3];
+        return;
+      }
+      if (nextField[y][x-1] === arrows[3]) {
+        nextField[y][x-1] = arrows[5];
+        return;
+      }              
+      nextField[y][x-1] = arrows[2];
+    }
+
+    const handleRight = (x, y) => {
+      if (field[y][x+1] === "@") {
+        nextField[y-1][x+1] = arrows[0];
+        nextField[y][x+1] = "*";
+        nextField[y+1][x+1] = arrows[1];
+        score += 1;
+        return;
+      }
+      if (field[y][x+1] === "wall") {
+        nextField[y][x] = arrows[2];
+        return;
+      }
+      if (nextField[y][x+1] === arrows[2]) {
+        nextField[y][x+1] = arrows[5];
+        return;
+      }              
+      nextField[y][x+1] = arrows[3];
+    }
+
     for (let y = 2; y < 23; y++) {
       for (let x = 1; x < 39; x++) {
         if (field[y][x] === "@") {
           if (nextField[y][x] !== "*") nextField[y][x] = "@";
         }
-
         if (field[y][x] === "*") {
           if (field[y+1][x] !== "floor") nextField[y+1][x] = "*";
         }
 
-        if (field[y][x] === arrows[0]) { // up
-          if (field[y-1][x] === "@") {
-            nextField[y-1][x-1] = arrows[2];
-            nextField[y-1][x] = "*";
-            nextField[y-1][x+1] = arrows[3];
-            score += 1;
-          } else if (field[y-1][x] === "wall") {
-            nextField[y][x] = arrows[1];
-          } else { 
-            if (nextField[y-1][x] !== arrows[1]) {
-              nextField[y-1][x] = arrows[0];
-            }
-          }
+        if (field[y][x] === arrows[2]) handleLeft(x, y);
+        if (field[y][x] === arrows[3]) handleRight(x, y);
+        if (field[y][x] === arrows[5]) {
+          handleLeft(x, y);
+          handleRight(x, y);
         }
 
-        if (field[y][x] === arrows[1]) { // down
-          if (field[y+1][x] === "@") {
-            nextField[y+1][x-1] = arrows[2];
-            nextField[y+1][x] = "*";
-            nextField[y+1][x+1] = arrows[3];
-            score += 1;
-          } else if (field[y+1][x] === "wall") {
-          } else if (field[y+1][x] !== "floor") {
-            nextField[y+1][x] = arrows[1];
-          }              
+        if (field[y][x] === arrows[0]) handleUp(x, y);
+        if (field[y][x] === arrows[1]) handleDown(x, y);
+        if (field[y][x] === arrows[4]) {
+          handleUp(x, y);
+          handleDown(x, y);
         }
-
-        if (field[y][x] === arrows[2]) { // left
-          if (field[y][x-1] === "@") {
-            nextField[y-1][x-1] = arrows[0];
-            nextField[y][x-1] = "*";
-            nextField[y+1][x-1] = arrows[1];
-            score += 1;
-          } else if (field[y-1][x] === "wall") {
-          } else if (field[y][x-1] === "wall") {
-            nextField[y][x] = arrows[3];
-          } else {
-            nextField[y][x-1] = arrows[2];
-          }              
-        }
-
-        if (field[y][x] === arrows[3]) { // right
-          if (field[y][x+1] === "@") {
-            nextField[y-1][x+1] = arrows[0];
-            nextField[y][x+1] = "*";
-            nextField[y+1][x+1] = arrows[1];
-            score += 1;
-          } else if (field[y-1][x] === "wall") {
-          } else if (field[y][x+1] === "wall") {
-            nextField[y][x] = arrows[2];
-          } else {
-            nextField[y][x+1] = arrows[3];
-          }              
-        }
-
-        hiscore = Math.max(score, hiscore);
       }
     }
+    hiscore = Math.max(score, hiscore);
   }
 
   const updateScreen = () => {
